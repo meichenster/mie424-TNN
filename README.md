@@ -44,3 +44,6 @@ For reference only, we included the following three scripts that would allow you
   - './scripts/show.sh': reads the log files from the experiments that have been run and prints a summary table with the main statistics
 
 However, running all those experiments sequentially would take around 1,200 days (but only 2 hours if you run them in parallel using 14,400 cores :thinking:). To test that the code is properly working, we included three lightweight versions of the previous scripts: './scripts/test_gd.sh', './scripts/test_mb.sh', and './scripts/test_show.sh'. They run experiments with up to 3 examples per class using a 5 minutes time limit. The 'test_gd.sh' takes around 7.5 hours and 'test_mb.sh' takes around 6.0 hours. Then, you can run 'test_show.sh' to observe a summary of the test performance obtained by each approach. For instance, ha_m (the HA model using the max-margin objective) should reach test performances between 20% and 30% (or timeout) whereas gd_t should reach test performances between 5% and 13%.
+
+## Credit
+This is a clond of the original source at: https://bitbucket.org/RToroIcarte/bnn/src/master/
