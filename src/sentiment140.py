@@ -56,7 +56,13 @@ def get_sentiment140_numpy(dataset, n_instances):
     
     for label, text in read(dataset):
         texts[text_id] = text
-        labels[text_id] = 0 if label == 0 else 1  # Convert 0,4 labels to 0,1
+        # Convert 0,2,4 labels to -1,0,1
+        if label == 0:
+            labels[text_id] = -1
+        elif label == 2:
+            labels[text_id] = 0
+        else:
+            labels[text_id] = 1
         text_id += 1
         if text_id == n_instances:
             break
@@ -100,9 +106,9 @@ def read(dataset="training"):
     tuple: (label, text) for each example
     """
     if dataset == "training":
-        fname = '../sentiment140/training.1600000.processed.noemoticon.csv'
+        fname = '../sentiment140/train.csv'
     elif dataset == "testing":
-        fname = '../sentiment140/testdata.manual.2009.06.14.csv'
+        fname = '../sentiment140/test.csv'
     else:
         raise ValueError("dataset must be 'testing' or 'training'")
 
