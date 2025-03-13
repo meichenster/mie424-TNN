@@ -48,7 +48,7 @@ def get_sentiment140_numpy(dataset, n_instances):
     
     Returns:
     tuple: (texts, labels) where texts is a numpy array of tweet texts and
-           labels is a numpy array of sentiment labels (0 or 1)
+           labels is a numpy array of sentiment labels (-1, 0 or 1)
     """
     texts = np.zeros(n_instances, dtype=object)
     labels = np.zeros(n_instances, dtype=int)
