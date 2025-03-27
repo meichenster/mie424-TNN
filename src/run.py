@@ -1,4 +1,4 @@
-from mnist import get_mnist_train_per_class, get_mnist_test_numpy
+from sentiment140 import get_mnist_train_per_class, get_mnist_test_numpy
 from bnn import BinarizedNetwork
 import time, os, argparse, math
 import numpy as np

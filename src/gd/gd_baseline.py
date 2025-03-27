@@ -6,7 +6,7 @@ https://github.com/uranusx86/BinaryNet-on-tensorflow
 import time, random, math, os, argparse
 import numpy as np
 import tensorflow as tf
-from mnist import get_mnist_train_per_class, get_mnist_test_numpy
+from sentiment140 import get_mnist_train_per_class, get_mnist_test_numpy
 from bnn import BinarizedNetwork
 
 class StandardNeuralNet:
