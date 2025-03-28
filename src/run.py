@@ -1,27 +1,28 @@
-from sentiment140 import get_mnist_train_per_class, get_mnist_test_numpy
-from bnn import BinarizedNetwork
+from sentiment140 import get_sentiment140_train_per_class, get_sentiment140_test_numpy
+from tnn import TernaryNetwork
 import time, os, argparse, math
 import numpy as np
 
 
-def _get_one_hot_encoding(a, n_classes=10):
-    b = np.zeros((a.size, n_classes))
-    b[np.arange(a.size), a] = 1
-    return b
+def _get_one_hot_encoding(labels):
+    shifted_labels = labels + 1 # Shift labels from (-1, 0, 1) to (0, 1, 2)
+    one_hot_labels = np.zeros((labels.size, 3), dtype=int)
+    one_hot_labels[np.arange(labels.size), shifted_labels] = 1
+    return one_hot_labels
         
 def test_weights(net, weights, biases, images, labels):
-    bnn = BinarizedNetwork(net)
+    tnn = TernaryNetwork(net)
     for i in range(len(weights)):
-        bnn.update_layer(i, weights[i], biases[i])
-    train_performance = bnn.test_network(images, labels)
+        tnn.update_layer(i, weights[i], biases[i])
+    train_performance = tnn.test_network(images, labels)
     print("Train performance = %0.2f"%train_performance)
-    images, labels = get_mnist_test_numpy()
-    labels =  2.0*_get_one_hot_encoding(labels) - 1.0 # mapping labels to -1/1 vectors
-    test_performance = bnn.test_network(images, labels)
+    seqs, labels = get_sentiment140_test_numpy()
+    labels = _get_one_hot_encoding(labels) # mapping labels to -1/0/1 vectors
+    test_performance = tnn.test_network(seqs, labels)
     print("Test performance = %0.2f"%test_performance)
 
     # clossing the network sessions
-    bnn.close()
+    tnn.close()
 
     return train_performance, test_performance
 
@@ -73,8 +74,10 @@ def run_mb_experiment(solver, n_hidden_layers, examples_per_class, examples_skip
     print("time_out:",time_out)
     
     # Configuration
+    n_input_units = 50
     n_hidden_units  = 16     # number of neurons per hidden layer
     n_threads       = 1      # number of threads
+    n_output_units  = 3
 
     # Code to run the experiment
     assert solver in ["mip_w", "mip_m", "cp_w", "cp_m", "hw_w", "hw_m", "ha_w", "ha_m"], "Selected solver is not supported yet!"
@@ -89,18 +92,18 @@ def run_mb_experiment(solver, n_hidden_layers, examples_per_class, examples_skip
     if solver == "ha_m":  from hybrid.ha_m  import MultiLayerPerceptron
 
     # Net architecture
-    net = [28*28] + [n_hidden_units for _ in range(n_hidden_layers)] + [10]
-    n_train = 10 * examples_per_class
+    net = [n_input_units] + [n_hidden_units for _ in range(n_hidden_layers)] + [n_output_units]
+    n_train = n_output_units * examples_per_class
 
     # loading the training set
-    images, labels = get_mnist_train_per_class(examples_per_class, examples_skip)
-    labels =  2.0*_get_one_hot_encoding(labels) - 1.0 # mapping labels to -1/1 vectors
+    seqs, labels = get_sentiment140_train_per_class(examples_per_class, examples_skip)
+    labels =  _get_one_hot_encoding(labels) # mapping labels to -1/0/1 vectors
 
     # Training the network
     start = time.time()
-    mlp = MultiLayerPerceptron(net, images, labels)
+    mlp = MultiLayerPerceptron(net, seqs, labels)
     for i in range(n_train):
-        mlp.add_example(images[i], labels[i], show=False)
+        mlp.add_example(seqs[i], labels[i], show=False)
     is_sat = mlp.train(n_threads, time_out)
     total_time = ((time.time()-start)/60.0)
     print("-----------------------------")
@@ -113,7 +116,7 @@ def run_mb_experiment(solver, n_hidden_layers, examples_per_class, examples_skip
     if is_sat:
         weights, biases = mlp.get_weights()
         # Show standard performance
-        train_performance, test_performance = test_weights(net, weights, biases, images, labels)
+        train_performance, test_performance = test_weights(net, weights, biases, seqs, labels)
         info["train_performance"] = train_performance
         info["test_performance"] = test_performance
         info["weights"] = [w.tolist() for w in weights]
@@ -145,7 +148,7 @@ def _save_gd_results(solver, n_hidden_layers, examples_per_class, examples_skip,
 
 def run_gd_experiments(solver, lr, tf_seed, n_hidden_layers, examples_per_class, examples_skip, time_out):
     """
-    This code runs a experiment using a gradient-based approach.
+    This code runs a experiment using a gradient-bseqsased approach.
     @params
         - solver: 
             - this indicates which gradient-based approach to used:
@@ -174,13 +177,13 @@ def run_gd_experiments(solver, lr, tf_seed, n_hidden_layers, examples_per_class,
     print("tf_seed:", tf_seed)
 
     # Setting the network's architecture
+    n_input_units = 50
     n_hidden_units  = 16
-    n_input_units   = 28*28
-    n_output_units  = 10
-    net = [28*28] + [n_hidden_units for _ in range(n_hidden_layers)] + [10]
+    n_output_units  = 3
+    net = [n_input_units] + [n_hidden_units for _ in range(n_hidden_layers)] + [n_output_units]
 
     # loading the training set
-    train_data, train_labels = get_mnist_train_per_class(examples_per_class, examples_skip)
+    train_data, train_labels = get_sentiment140_train_per_class(examples_per_class, examples_skip)
     train_labels = _get_one_hot_encoding(train_labels)
 
     # Training and testing the net

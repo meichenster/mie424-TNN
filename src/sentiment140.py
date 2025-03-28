@@ -1,6 +1,18 @@
 import os
 import csv
 import numpy as np
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+def tokenize_sentiment140(texts, max_words=10000, max_len=50):
+    """
+    Tokenize each tweet for use in the TNN.
+    """
+    tokenizer = Tokenizer(num_words=max_words, oov_token='<OOV>')
+    tokenizer.fit_on_texts(texts)
+    sequences = tokenizer.texts_to_sequences(texts)
+    padded_sequences = pad_sequences(sequences, maxlen=max_len, padding='post', truncating='post')
+    return padded_sequences
 
 def get_sentiment140_train_per_class(examples_per_class, examples_skip):
     """
@@ -29,7 +41,7 @@ def get_sentiment140_train_per_class(examples_per_class, examples_skip):
             continue
         if examples_per_class <= added[class_idx]:
             continue
-        texts[text_id] = text
+        texts[text_id] = tokenize_sentiment140(text)
         labels[text_id] = class_idx
         text_id += 1
         added[class_idx] += 1
@@ -55,7 +67,7 @@ def get_sentiment140_numpy(dataset, n_instances):
     text_id = 0
     
     for label, text in read(dataset):
-        texts[text_id] = text
+        texts[text_id] = tokenize_sentiment140(text)
         # Convert 0,2,4 labels to -1,0,1
         if label == 0:
             labels[text_id] = -1
