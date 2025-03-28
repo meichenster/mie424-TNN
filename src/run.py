@@ -98,6 +98,7 @@ def run_mb_experiment(solver, n_hidden_layers, examples_per_class, examples_skip
     # loading the training set
     seqs, labels = get_sentiment140_train_per_class(examples_per_class, examples_skip)
     labels =  _get_one_hot_encoding(labels) # mapping labels to 0/1 vectors
+    print(seqs[-1])
 
     # Training the network
     start = time.time()

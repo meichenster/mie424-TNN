@@ -89,6 +89,8 @@ class MultiLayerPerceptron:
                         inputs.append(I)
                     pre_activation = sum(inputs)
                 # adding the bias
+                print(layer_id)
+                print(n_out)
                 pre_activation += self.biases[(layer_id,n_out)]
                 # computing activation
                 if layer_id == len(self.neurons_per_layer)-1:

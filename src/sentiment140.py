@@ -12,6 +12,7 @@ def tokenize_sentiment140(texts, max_words=10000, max_len=50):
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
     padded_sequences = pad_sequences(sequences, maxlen=max_len, padding='post', truncating='post')
+    padded_sequences = padded_sequences.reshape(-1, max_len, 1) # Tweets should be (50,1)
     return padded_sequences
 
 def get_sentiment140_train_per_class(examples_per_class, examples_skip):
@@ -25,30 +26,43 @@ def get_sentiment140_train_per_class(examples_per_class, examples_skip):
     
     Returns:
     tuple: (texts, labels) where texts is a numpy array of tweet texts and
-           labels is a numpy array of sentiment labels (0 or 1)
+           labels is a numpy array of sentiment labels (-1 or 0 or 1)
     """
-    n_instances = 2 * examples_per_class  # 2 classes: negative (0) and positive (1)
-    added = [0, 0]  # Track added examples for each class
-    skipped = [0, 0]  # Track skipped examples for each class
-    texts = np.zeros(n_instances, dtype=object)
-    labels = np.zeros(n_instances, dtype=int)
-    text_id = 0
+    n_instances = 3 * examples_per_class  # 3 classes: negative (-1), neutral (0) and positive (1)
+    added = [0, 0, 0]  # Track added examples for each class
+    skipped = [0, 0, 0]  # Track skipped examples for each class
+    raw_texts = []
+    labels = []
     
     for label, text in read("training"):
-        class_idx = 0 if label == 0 else 1  # Convert 0,4 labels to 0,1
-        if skipped[class_idx] < (examples_skip * examples_per_class):
+        # Convert label from (0,2,4) to (-1,0,1)
+        if label == 0:
+            class_idx = 0  # -1 class
+        elif label == 2:
+            class_idx = 1  # 0 class
+        else:  # label == 4
+            class_idx = 2  # 1 class
+
+        if skipped[class_idx] < examples_skip:
             skipped[class_idx] += 1
             continue
-        if examples_per_class <= added[class_idx]:
-            continue
-        texts[text_id] = tokenize_sentiment140(text)
-        labels[text_id] = class_idx
-        text_id += 1
-        added[class_idx] += 1
-        if text_id == n_instances:
+
+        if added[class_idx] < examples_per_class:
+            raw_texts.append(text)
+            labels.append(class_idx - 1)  # Convert to -1,0,1
+            added[class_idx] += 1
+        
+        # Track if we've added enough instances
+        if sum(added) == n_instances:
             break
-    
-    return texts, labels
+
+    # Tokenize text
+    tokenized_texts = tokenize_sentiment140(raw_texts)
+    labels_array = np.array(labels)
+
+    print("Sample text shape:", tokenized_texts.shape)
+    print("Sample label:", labels_array[-1])
+    return tokenized_texts, labels_array
 
 def get_sentiment140_numpy(dataset, n_instances):
     """
