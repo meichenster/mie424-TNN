@@ -1,5 +1,5 @@
 from sentiment140 import get_sentiment140_train_per_class, get_sentiment140_test_numpy
-from tnn import TernaryNetwork
+from tnn import TernaryNeuralNetwork
 import time, os, argparse, math
 import numpy as np
 
@@ -10,14 +10,14 @@ def _get_one_hot_encoding(labels):
     one_hot_labels[np.arange(labels.size), shifted_labels] = 1
     return one_hot_labels
         
-def test_weights(net, weights, biases, images, labels):
-    tnn = TernaryNetwork(net)
+def test_weights(net, weights, biases, seqs, labels):
+    tnn = TernaryNeuralNetwork(net)
     for i in range(len(weights)):
         tnn.update_layer(i, weights[i], biases[i])
-    train_performance = tnn.test_network(images, labels)
+    train_performance = tnn.test_network(seqs, labels)
     print("Train performance = %0.2f"%train_performance)
     seqs, labels = get_sentiment140_test_numpy()
-    labels = _get_one_hot_encoding(labels) # mapping labels to -1/0/1 vectors
+    labels = _get_one_hot_encoding(labels) # mapping labels to 0/1 vectors
     test_performance = tnn.test_network(seqs, labels)
     print("Test performance = %0.2f"%test_performance)
 
@@ -97,7 +97,7 @@ def run_mb_experiment(solver, n_hidden_layers, examples_per_class, examples_skip
 
     # loading the training set
     seqs, labels = get_sentiment140_train_per_class(examples_per_class, examples_skip)
-    labels =  _get_one_hot_encoding(labels) # mapping labels to -1/0/1 vectors
+    labels =  _get_one_hot_encoding(labels) # mapping labels to 0/1 vectors
 
     # Training the network
     start = time.time()
@@ -148,7 +148,7 @@ def _save_gd_results(solver, n_hidden_layers, examples_per_class, examples_skip,
 
 def run_gd_experiments(solver, lr, tf_seed, n_hidden_layers, examples_per_class, examples_skip, time_out):
     """
-    This code runs a experiment using a gradient-bseqsased approach.
+    This code runs a experiment using a gradient-based approach.
     @params
         - solver: 
             - this indicates which gradient-based approach to used:
@@ -198,7 +198,7 @@ def run_gd_experiments(solver, lr, tf_seed, n_hidden_layers, examples_per_class,
     dead_inputs = np.all(train_data == train_data[0,:], axis = 0)
     for neuron_in in range(n_input_units):
         if dead_inputs[neuron_in]: weights[0][neuron_in,:] = np.zeros(net[1])
-    train_performance, test_performance = test_weights(net, weights, biases, train_data, 2*train_labels-1)
+    train_performance, test_performance = test_weights(net, weights, biases, train_data, train_labels)
     print("-----------------------------")
     print("Total time = %0.2f[m]"%total_time)
     print("Train performance = %0.2f"%train_performance)
