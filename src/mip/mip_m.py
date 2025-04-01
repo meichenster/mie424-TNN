@@ -14,7 +14,7 @@ class MultiLayerPerceptron:
         self.neurons_per_layer = neurons_per_layer
         self.m = Model("MLP")
 
-        # Removing dead inputs
+        # Input shape is (n_samples, 50)
         dead_inputs = np.all(data == data[0,:], axis = 0)
 
         # Weights and biases
@@ -83,16 +83,32 @@ class MultiLayerPerceptron:
                 # computing activation
                 if layer_id == len(self.neurons_per_layer)-1:
                     # This is an output unit
-                    if label[n_out] > 0:
-                        self.m.addConstr(pre_activation >=  margin)
-                    else:
+                    # NOTE: Changed from oriignal code to be TNN
+                    if label[0] == 1: # Negative (class=-1)
                         self.m.addConstr(pre_activation <= -margin - 0.001)
+                    elif label[1] == 1:
+                        self.m.addConstr(-margin <= pre_activation)
+                        self.m.addConstr(pre_activation <= margin)
+                    elif label[2] == 1:
+                        self.m.addConstr(pre_activation >= margin)
+                        
                 else:
                     # This is a hidden unit
-                    n = self.m.addVar(vtype=GRB.BINARY, name="n%d-%d_%d"%(layer_id, n_out, self.eg_id))
+                    n = self.m.addVar(vtype=GRB.INTEGER, lb=-1, ub=1, name="n%d-%d_%d"%(layer_id, n_out, self.eg_id))
+                    # NOTE: Added two new binary variables p and q where n = p-q such that n can take on values -1, 0, 1
+                    p = self.m.addVar(vtype=GRB.BINARY, name="p%d-%d_%d"%(layer_id, n_out, self.eg_id) )
+                    q = self.m.addVar(vtype=GRB.BINARY, name="q%d-%d_%d"%(layer_id, n_out, self.eg_id) )
+                    # NOTE: Added constraint for p and q
+                    self.m.addConstr(n == p - q) # p=1, q=0 means n=1 (positive) and p=0,q=0 means n=1 (neutral), etc.
+                    self.m.addConstr(p + q <= 1) # p and q cannot both == 1 at the same time
                     # Indicator constraint version
-                    self.m.addConstr((n == 1) >> (pre_activation >=  margin))
-                    self.m.addConstr((n == 0) >> (pre_activation <= -margin - 0.001))
+                    # NOTE: Changed from original code to be TNN and added M to scale p and q values
+                    M = 100000 # M * (1-p)
+                    self.m.addConstr(pre_activation <= -margin - 0.001 + M*(1-q)) # applies for n=-1
+                    self.m.addConstr(pre_activation >=  -margin - M*(p+q)) # applies for n=0
+                    self.m.addConstr(pre_activation <= margin + M*(p+q)) # applies for n=0
+                    self.m.addConstr(pre_activation >=  margin - M*(1-p)) # applies for n=1
+  
                     neurons[(layer_id, n_out)] = n
                     self.activations[(layer_id, n_out, self.eg_id)] = n
 

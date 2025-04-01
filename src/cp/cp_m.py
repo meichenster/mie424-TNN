@@ -23,9 +23,7 @@ class MultiLayerPerceptron:
         data_squeezed = np.squeeze(data, axis=2) # Shape: (1, 50)
         in_equal = np.all(data_squeezed == data_squeezed[0, :], axis=0) # Shape: (50,)
         self.id2input = [n_in for n_in in range(self.layers[0]) if not in_equal[n_in]]
-        print("id2input:", self.id2input)
         self.original_input = self.layers[0]  # Should be 50
-        print(self.original_input)
         self.layers[0] = len(self.id2input)
 
 
@@ -56,11 +54,6 @@ class MultiLayerPerceptron:
         # Output number (index of 1 in one-hot label)
         out_number = np.where(label == 1)[0][0]
 
-        print("Data, label, weights----------")
-        # print(data)
-        # print(label)
-        print(self.weights)
-
         # Adding the layers
         activations = None
         n_layers = len(self.layers)
@@ -77,12 +70,8 @@ class MultiLayerPerceptron:
                 else:
                     x_input = activations_prev  # Hidden layers
 
-                print("x_input, weights[(layer_id, n_out)], pre_activation")
-                print(x_input)
-                print(self.weights[(layer_id, n_out)])
-
                 # Computing preactivations including an extra 1.0 input for the bias
-                pre_activation = self.m.scal_prod(x_input + [1], self.weights[(layer_id, n_out)])
+                pre_activation = self.m.scal_prod(np.append(x_input, [1]), self.weights[(layer_id, n_out)])
                 # Saving the margin for this neuron
                 self.margins[(layer_id, n_out)].append(self.m.abs(pre_activation))
 

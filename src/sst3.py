@@ -11,7 +11,6 @@ def tokenize_sst3(texts, max_words=10000, max_len=50):
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
     padded_sequences = pad_sequences(sequences, maxlen=max_len, padding='post', truncating='post')
-    padded_sequences = padded_sequences.reshape(-1, max_len, 1)
     return padded_sequences
 
 def get_sst3_train_per_class(examples_per_class, examples_skip):
@@ -63,13 +62,11 @@ def get_sst3_numpy(dataset, n_instances):
     tuple: (texts, labels) where texts is a numpy array of tweet texts and
            labels is a numpy array of sentiment labels (-1, 0 or 1)
     """
-    texts = np.zeros(n_instances, dtype=object)
+    raw_texts = []
     labels = np.zeros(n_instances, dtype=int)
     text_id = 0
-    
     for label, text in read(dataset):
-        texts[text_id] = tokenize_sst3(text)
-        # Convert 0,2,4 labels to -1,0,1
+        raw_texts.append(text)
         if label == 0:
             labels[text_id] = -1
         elif label == 1:
@@ -80,26 +77,27 @@ def get_sst3_numpy(dataset, n_instances):
         if text_id == n_instances:
             break
     
-    return texts, labels
+    tokenized_texts = tokenize_sst3(raw_texts)  # (n_instances, 50)
+    return tokenized_texts, labels
 
-def get_sst3_train_numpy(n_instances=1600000):
+def get_sst3_train_numpy(n_instances=8000):
     """
     Get training data from SST3.
     
     Args:
-    n_instances (int): Number of training examples to retrieve (max 1,600,000)
+    n_instances (int): Number of training examples to retrieve (max 8000)
     
     Returns:
     tuple: (texts, labels) for training data
     """
     return get_sst3_numpy("training", n_instances)
 
-def get_sst3_test_numpy(n_instances=498):
+def get_sst3_test_numpy(n_instances=2000):
     """
     Get test data from SST3.
     
     Args:
-    n_instances (int): Number of test examples to retrieve (max 498)
+    n_instances (int): Number of test examples to retrieve (max 2000)
     
     Returns:
     tuple: (texts, labels) for test data

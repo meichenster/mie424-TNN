@@ -12,7 +12,7 @@ def tokenize_sentiment140(texts, max_words=10000, max_len=50):
     tokenizer.fit_on_texts(texts)
     sequences = tokenizer.texts_to_sequences(texts)
     padded_sequences = pad_sequences(sequences, maxlen=max_len, padding='post', truncating='post')
-    padded_sequences = padded_sequences.reshape(-1, max_len, 1) # Tweets should be (50,1)
+    print("Shape of sequence", padded_sequences.shape)
     return padded_sequences
 
 def get_sentiment140_train_per_class(examples_per_class, examples_skip):

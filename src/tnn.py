@@ -49,8 +49,9 @@ class TernaryNeuralNetwork:
             b = _bias_variable([n_outputs])
             a = tf.matmul(x_prev, W) + b
 
-            # zero is considered a positive activation by default
-            x = tf.sign(tf.sign(a) + 0.1) 
+            # NOTE: Edited to turn into TNN
+            # x = tf.sign(tf.sign(a) + 0.1) 
+            x = tf.where(a > 0.001, tf.ones_like(a), tf.where(a < -0.001, tf.ones_like(a) * -1.0, tf.zeros_like(a)))
 
             # Methods to set weights to values that were found using MIP
             w_copy = tf.assign(W, tf.reshape(self.weight_values, fc_shape))
@@ -68,8 +69,8 @@ class TernaryNeuralNetwork:
         # Computing performance
         score = tf.multiply(self.labels, x)
         score = tf.reduce_sum(score, 1) >= n_outputs
-        self.performance = tf.reduce_mean(tf.cast(score, tf.float32))
-        
+        self.performance = tf.reduce_mean(tf.cast(score, tf.float32)) # Should return a scalar!
+
         # initialize variables
         self.sess.run(tf.global_variables_initializer())
 
@@ -90,6 +91,7 @@ class TernaryNeuralNetwork:
             its one-hot embedding is perfectly outputed by the network.
             Hence, an always yes classifier would have 0.0 performance for a 10-classes problem
         """
+
         return self.sess.run(self.performance, {self.seqs: seqs, self.labels:labels})
 
     def update_layer(self, layer_id, weights, biases):
