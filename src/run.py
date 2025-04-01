@@ -1,4 +1,4 @@
-from sentiment140 import get_sentiment140_train_per_class, get_sentiment140_test_numpy
+from sst3 import get_sst3_train_per_class, get_sst3_test_numpy
 from tnn import TernaryNeuralNetwork
 import time, os, argparse, math
 import numpy as np
@@ -16,7 +16,7 @@ def test_weights(net, weights, biases, seqs, labels):
         tnn.update_layer(i, weights[i], biases[i])
     train_performance = tnn.test_network(seqs, labels)
     print("Train performance = %0.2f"%train_performance)
-    seqs, labels = get_sentiment140_test_numpy()
+    seqs, labels = get_sst3_test_numpy()
     labels = _get_one_hot_encoding(labels) # mapping labels to 0/1 vectors
     test_performance = tnn.test_network(seqs, labels)
     print("Test performance = %0.2f"%test_performance)
@@ -96,8 +96,9 @@ def run_mb_experiment(solver, n_hidden_layers, examples_per_class, examples_skip
     n_train = n_output_units * examples_per_class
 
     # loading the training set
-    seqs, labels = get_sentiment140_train_per_class(examples_per_class, examples_skip)
+    seqs, labels = get_sst3_train_per_class(examples_per_class, examples_skip)
     labels =  _get_one_hot_encoding(labels) # mapping labels to 0/1 vectors
+    print("seqs shape:", seqs.shape, "labels shape:", labels.shape)
 
     # Training the network
     start = time.time()
@@ -183,7 +184,7 @@ def run_gd_experiments(solver, lr, tf_seed, n_hidden_layers, examples_per_class,
     net = [n_input_units] + [n_hidden_units for _ in range(n_hidden_layers)] + [n_output_units]
 
     # loading the training set
-    train_data, train_labels = get_sentiment140_train_per_class(examples_per_class, examples_skip)
+    train_data, train_labels = get_sst3_train_per_class(examples_per_class, examples_skip)
     train_labels = _get_one_hot_encoding(train_labels)
 
     # Training and testing the net
