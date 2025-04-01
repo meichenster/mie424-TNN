@@ -49,7 +49,7 @@ class MultiLayerPerceptron:
             b = self.m.addVar(vtype=GRB.BINARY, name="ab_%d-%d"%b_id)
             self.m.addConstr(self.biases[b_id] <=  b)
             self.m.addConstr(self.biases[b_id] >= -b)
-            w_abs.append(w)
+            w_abs.append(b)
         self.loss = sum(w_abs)
 
         # No loss function
@@ -67,6 +67,7 @@ class MultiLayerPerceptron:
     def add_example(self, data, label, show = False):
 
         """
+        Args: data (50,) and label (3,)
         NOTE:
             - the neurons are binary variables (0,1)
             - however, the '0' value has to be mapped to '-1' when adding the constraints (i.e. replace 'n' by '2*n-1')
@@ -89,22 +90,31 @@ class MultiLayerPerceptron:
                         inputs.append(I)
                     pre_activation = sum(inputs)
                 # adding the bias
-                print(layer_id)
-                print(n_out)
                 pre_activation += self.biases[(layer_id,n_out)]
                 # computing activation
                 if layer_id == len(self.neurons_per_layer)-1:
                     # This is an output unit
-                    if label[n_out] > 0:
-                        self.m.addConstr(pre_activation >=  0)
-                    else:
+                    # NOTE: Edited for ternary activation
+                    if label[0] == 1:
                         self.m.addConstr(pre_activation <= -1)
+                    elif label[1] == 1:
+                        self.m.addConstr(pre_activation >= -0.5)
+                        self.m.addConstr(pre_activation <= 0.5)
+                    elif label[2] == 1:
+                        self.m.addConstr(pre_activation >= 0)
                 else:
                     # This is a hidden unit
-                    n = self.m.addVar(vtype=GRB.BINARY, name="n%d-%d_%d"%(layer_id, n_out, self.eg_id))
-                    # Indicator constraint version
-                    self.m.addConstr((n == 1) >> (pre_activation >=  0))
-                    self.m.addConstr((n == 0) >> (pre_activation <= -1))
+                    # NOTE: Edited for ternary activation
+                    n = self.m.addVar(vtype=GRB.INTEGER, lb=-1, ub=1, name="n%d-%d_%d"%(layer_id, n_out, self.eg_id))
+                    p = self.m.addVar(vtype=GRB.BINARY, name="p%d-%d_%d"%(layer_id, n_out, self.eg_id))
+                    q = self.m.addVar(vtype=GRB.BINARY, name="q%d-%d_%d"%(layer_id, n_out, self.eg_id))
+                    self.m.addConstr(n == p - q)  # n = 1 (p=1, q=0), 0 (p=0, q=0), -1 (p=0, q=1)
+                    self.m.addConstr(p + q <= 1)  # Prevent p=1, q=1
+                    M = 1000  # Big-M constant
+                    self.m.addConstr(pre_activation >= 0 - M * (1 - p))  # n = 1 if pre_activation >= 0
+                    self.m.addConstr(pre_activation <= -1 + M * (1 - q))  # n = -1 if pre_activation <= -1
+                    self.m.addConstr(pre_activation >= -0.5 - M * (p + q))  # n = 0
+                    self.m.addConstr(pre_activation <= 0.5 + M * (p + q))   # n = 0
                     neurons[(layer_id, n_out)] = n
                     self.activations[(layer_id, n_out, self.eg_id)] = n
 
