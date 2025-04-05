@@ -10,6 +10,9 @@ from docplex.cp.model import *
 from gurobipy import *
 import mip.mip_w, mip.mip_m
 
+context.solver.agent = 'local'
+context.solver.local.execfile = '/home/meichen/Desktop/CPLEX_Studio2212/cpoptimizer/bin/x86-64_linux/cpoptimizer'
+
 class HybridMethod:
     def __init__(self, solver, layers, data, labels):
         """
