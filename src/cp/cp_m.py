@@ -19,9 +19,7 @@ class MultiLayerPerceptron:
 
         # Preprocessing: Identify non-constant input features across samples
         self.id2input = []
-        # data shape: (n_samples, 50, 1), squeeze to (n_samples, 50)
-        data_squeezed = np.squeeze(data, axis=2) # Shape: (1, 50)
-        in_equal = np.all(data_squeezed == data_squeezed[0, :], axis=0) # Shape: (50,)
+        in_equal = np.all(data == data[0, :], axis=0) # Shape: (50,)
         self.id2input = [n_in for n_in in range(self.layers[0]) if not in_equal[n_in]]
         self.original_input = self.layers[0]  # Should be 50
         self.layers[0] = len(self.id2input)
