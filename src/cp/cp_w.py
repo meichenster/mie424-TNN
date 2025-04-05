@@ -6,6 +6,9 @@ from docplex.cp.model import *
 This is a CP model that aims to find the BNNs with fewer non-zero weights that fits the training set.
 """
 
+context.solver.agent = 'local'
+context.solver.local.execfile = '/home/meichen/Desktop/CPLEX_Studio2212/cpoptimizer/bin/x86-64_linux/cpoptimizer'
+
 class MultiLayerPerceptron:
     def __init__(self, layers, data, labels):
         """

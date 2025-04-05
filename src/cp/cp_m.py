@@ -2,6 +2,9 @@ import random, time, math
 import numpy as np
 from docplex.cp.model import *
 
+context.solver.agent = 'local'
+context.solver.local.execfile = '/home/meichen/Desktop/CPLEX_Studio2212/cpoptimizer/bin/x86-64_linux/cpoptimizer'
+
 """
 This is a CP model that aims to find the TNNs with the maximal sum of the neuron's margins that fits the training set.
 """
