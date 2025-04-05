@@ -6,7 +6,7 @@ https://github.com/uranusx86/BinaryNet-on-tensorflow
 import time, random, math, os, argparse
 import numpy as np
 import tensorflow as tf
-from sentiment140 import get_mnist_train_per_class, get_mnist_test_numpy
+from sst3 import get_sst3_train_per_class, get_sst3_test_numpy
 from bnn import BinarizedNetwork
 
 class StandardNeuralNet:
@@ -87,28 +87,29 @@ class StandardNeuralNet:
         if n_hidden_layers == 0: n_hidden_units  = n_input_units
         self.weights = []
         self.biases  = []
+        threshold = 0.5 # OPTIONAL parameter to pas sinto ternary tanh unit
 
         x = self.x
         for i in range(n_hidden_layers):
             # Fully connected layer
             n_in = n_input_units if i == 0 else n_hidden_units
 
-            W1_fc = binary_tanh_unit(weight_variable([n_in, n_hidden_units]))
-            b1_fc = binary_tanh_unit(bias_variable([n_hidden_units]))
-            W2_fc = binary_tanh_unit(weight_variable([n_in, n_hidden_units]))
-            b2_fc = binary_tanh_unit(bias_variable([n_hidden_units]))
+            W1_fc = ternary_tanh_unit(weight_variable([n_in, n_hidden_units]))
+            b1_fc = ternary_tanh_unit(bias_variable([n_hidden_units]))
+            W2_fc = ternary_tanh_unit(weight_variable([n_in, n_hidden_units]))
+            b2_fc = ternary_tanh_unit(bias_variable([n_hidden_units]))
             W_fc = (W1_fc + W2_fc)/2
             b_fc = (b1_fc + b2_fc)/2
-            # NOTE: the 0.001 ensures that a zero preactivation is mapped to +1 activation
-            x = binary_tanh_unit(tf.matmul(x, W_fc) + b_fc + 0.001)
+            # NOTE: Changed the activation
+            x = ternary_tanh_unit(tf.matmul(x, W_fc) + b_fc + 0.001)
             self.weights.append(W_fc)
             self.biases.append(b_fc)
 
         # Fully connected layer 2 (Output layer)
-        W1_o = binary_tanh_unit(weight_variable([n_hidden_units, n_output_units]))
-        b1_o = binary_tanh_unit(bias_variable([n_output_units]))
-        W2_o = binary_tanh_unit(weight_variable([n_hidden_units, n_output_units]))
-        b2_o = binary_tanh_unit(bias_variable([n_output_units]))
+        W1_o = ternary_tanh_unit(weight_variable([n_hidden_units, n_output_units]))
+        b1_o = ternary_tanh_unit(bias_variable([n_output_units]))
+        W2_o = ternary_tanh_unit(weight_variable([n_hidden_units, n_output_units]))
+        b2_o = ternary_tanh_unit(bias_variable([n_output_units]))
         W_o = (W1_o + W2_o)/2
         b_o = (b1_o + b2_o)/2
         y = tf.matmul(x, W_o) + b_o
@@ -175,6 +176,22 @@ def round_through(x):
 # during back propagation
 def binary_tanh_unit(x):
     return 2.*round_through(hard_sigmoid(x))-1.
+
+# NOTE: New ternary activation function using a threshold to output {-1, 0, 1}
+def ternary_tanh_unit(x, threshold=0.5):
+    # Get input shape
+    x_shape = tf.shape(x)
+
+    # Tensor with x's shape filled with constants {-1, 0, 1}
+    ones = tf.ones(x_shape, dtype=tf.float32)
+    zeros = tf.zeros(x_shape, dtype=tf.float32)
+
+    # Activation
+    ternary = tf.where(x > threshold, ones, 
+                       tf.where(x < -threshold, -ones, zeros))
+    
+    # Same as round_through function
+    return x + tf.stop_gradient(ternary - x)
 
 def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)

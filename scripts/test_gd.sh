@@ -1,5 +1,5 @@
 # PARAMS
-MODELS="gd_b gd_t"
+MODELS="gd_t"
 LRS="1e-3"
 SEEDS=`seq 0 4`
 HLS=`seq 0 2`
