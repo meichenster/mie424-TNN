@@ -63,8 +63,7 @@ class MultiLayerPerceptron:
             for n_out in range(h_size):
                 # Computing preactivation
                 if layer_id == 1:
-                    # Squeeze data from (50, 1) to (50,) and select non-constant inputs
-                    x_input = np.squeeze(data)[self.id2input]
+                    x_input = [data[i] for i in self.id2input]
                 else:
                     x_input = activations_prev  # Hidden layers
 
@@ -73,16 +72,19 @@ class MultiLayerPerceptron:
                 # Saving the margin for this neuron
                 self.margins[(layer_id, n_out)].append(self.m.abs(pre_activation))
 
-                # Computing activation
-                if layer_id == n_layers - 1:
-                    # Output unit
+                # NOTE: EDITED HERE FOR TNN
+                # computing activation
+                if layer_id == n_layers-1:
+                    # This is an output unit - allow ternary {-1, 0, +1}
                     if label[n_out] > 0:
-                        self.m.add(pre_activation >= 0)
-                    else:
-                        self.m.add(pre_activation <= -1)
+                        self.m.add(pre_activation >= 1)  # Forces +1 for positive examples
+                    elif label[n_out] < 0:
+                        self.m.add(pre_activation <= -1)  # Forces -1 for negative examples
+                    # If label is 0, no constraint added, allowing any ternary value
+                # Hidden layers: ternary {-1, 0, +1}   
                 else:
-                    # Hidden unit (ternary activation: -1 or 1)
-                    activations[n_out] = (2 * (pre_activation >= 0) - 1)
+                    # This is a hidden unit
+                    activations[n_out] = (2*(pre_activation >= 0)-1)
 
             activations_prev = activations
 

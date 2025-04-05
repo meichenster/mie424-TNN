@@ -120,9 +120,15 @@ class StandardNeuralNet:
         # Evaluation functions (square hinge loss)
         self.hinge = tf.square(tf.losses.hinge_loss(self.y_, y))
 
-        score = tf.multiply(2*self.y_-1, tf.sign(tf.sign(y)+0.1))
-        score = tf.reduce_sum(score, 1) >= n_output_units
-        self.accuracy = tf.reduce_mean(tf.cast(score, tf.float32), name='accuracy')
+        # NOTE: ORIGINAL SCORE
+        # score = tf.multiply(2*self.y_-1, tf.sign(tf.sign(y)+0.1))
+        # score = tf.reduce_sum(score, 1) >= n_output_units
+        # self.accuracy = tf.reduce_mean(tf.cast(score, tf.float32), name='accuracy')
+
+        # NOTE: NEW SCORE TO REWARD PARTIAL CORRECTNESS
+        correct_prediction = tf.equal(y, self.y_)
+        correct_prediction = tf.cast(correct_prediction, tf.float32)
+        self.accuracy = tf.reduce_mean(correct_prediction)
 
         # Training algorithm
         self.train_step = tf.train.AdamOptimizer(self.lr).minimize(self.hinge)

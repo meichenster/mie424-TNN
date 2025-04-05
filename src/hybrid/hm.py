@@ -5,7 +5,7 @@ This is a CP/MIP hybrid approach that:
 """
 import random, time, math
 import numpy as np
-from bnn import BinarizedNetwork
+from tnn import TernaryNeuralNetwork
 from docplex.cp.model import *
 from gurobipy import *
 import mip.mip_w, mip.mip_m
@@ -40,10 +40,11 @@ class HybridMethod:
             # Step 2: Optimize the solution using MIP
             weights, biases = self.cp_feasibility.get_weights()
             self.cp_weights, self.cp_biases = weights, biases
-            bnn = BinarizedNetwork(self.layers)
+            # NOTE: Changed this from BNN to TNN
+            tnn = TernaryNeuralNetwork(self.layers)
             for i in range(len(weights)):
-                bnn.update_layer(i, weights[i], biases[i])
-            activations = bnn.get_activations(self.data)
+                tnn.update_layer(i, weights[i], biases[i])
+            activations = tnn.get_activations(self.data)
 
             # Loading the mip model
             if self.solver == "hw_w": self.mip_optimality = mip.mip_w.MultiLayerPerceptron(self.layers, self.data, self.labels)
@@ -166,11 +167,14 @@ class OptWeightMIP:
                 pre_activation = sum([activations[layer_id-1][n_in] * self.weights[(n_in,layer_id,n_out)] for n_in in range(self.layers[layer_id-1])])
                 # adding the bias
                 pre_activation += self.biases[(layer_id,n_out)]
-                # computing activation
-                if activations[layer_id][n_out] > 0:
-                    self.m.addConstr(pre_activation >=  0)
-                else:
+                # NOTE: Changed activation for TNN
+                if activations[layer_id][n_out] == 1:
+                    self.m.addConstr(pre_activation >= 0)
+                elif activations[layer_id][n_out] == -1:
                     self.m.addConstr(pre_activation <= -1)
+                else:  # 0
+                    self.m.addConstr(pre_activation >= -1)
+                    self.m.addConstr(pre_activation <= 0)
 
     def train(self, n_threads, time_out):
         """
@@ -285,11 +289,14 @@ class OptMarginMIP:
                 pre_activation += self.biases[(layer_id,n_out)]
                 # computing activation
                 margin = self.margins[(layer_id, n_out)]
-                if activations[layer_id][n_out] > 0:
-                    self.m.addConstr(pre_activation >=  margin)
-                else:
-                    self.m.addConstr(pre_activation <= -margin - 0.001)
-
+                # NOTE: Change activation for TNN
+                if activations[layer_id][n_out] == 1:
+                        self.m.addConstr(pre_activation >= margin)
+                elif activations[layer_id][n_out] == -1:
+                    self.m.addConstr(pre_activation <= -margin - 1)
+                else:  # 0
+                    self.m.addConstr(pre_activation >= -margin)
+                    self.m.addConstr(pre_activation <= margin)
     def train(self, n_threads, time_out):
         """
         Returns True if no feasible solution exists
@@ -346,8 +353,6 @@ class OptMarginMIP:
         
         return w_ret, b_ret
 
-
-
 class FeasCP:
     """
     CP model that looks for a feasible CP solution
@@ -403,11 +408,16 @@ class FeasCP:
                 # Computing preactivations including an extra 1.0 input for the bias
                 pre_activation = scal_prod(x_input + [1], self.weights[(layer_id,n_out)])
                 
+                # NOTE: EDITED HERE FOR TNN
                 # computing activation
                 if layer_id == n_layers-1:
-                    # This is an output unit
-                    if label[n_out] > 0: self.m.add(pre_activation >= 0)
-                    else:                self.m.add(pre_activation <= -1)
+                    # This is an output unit - allow ternary {-1, 0, +1}
+                    if label[n_out] > 0:
+                        self.m.add(pre_activation >= 1)  # Forces +1 for positive examples
+                    elif label[n_out] < 0:
+                        self.m.add(pre_activation <= -1)  # Forces -1 for negative examples
+                    # If label is 0, no constraint added, allowing any ternary value
+                # Hidden layers: ternary {-1, 0, +1}   
                 else:
                     # This is a hidden unit
                     activations[n_out] = (2*(pre_activation >= 0)-1)

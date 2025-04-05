@@ -62,17 +62,21 @@ class MultiLayerPerceptron:
                 # Computing preactivations including an extra 1.0 input for the bias
                 pre_activation = scal_prod(x_input + [1], self.weights[(layer_id,n_out)])
                 
+                # NOTE: EDITED HERE FOR TNN
                 # computing activation
                 if layer_id == n_layers-1:
-                    # This is an output unit
-                    if label[n_out] > 0: self.m.add(pre_activation >= 0)
-                    else:                self.m.add(pre_activation <= -1)
+                    # This is an output unit - allow ternary {-1, 0, +1}
+                    if label[n_out] > 0:
+                        self.m.add(pre_activation >= 1)  # Forces +1 for positive examples
+                    elif label[n_out] < 0:
+                        self.m.add(pre_activation <= -1)  # Forces -1 for negative examples
+                    # If label is 0, no constraint added, allowing any ternary value
+                # Hidden layers: ternary {-1, 0, +1}   
                 else:
                     # This is a hidden unit
                     activations[n_out] = (2*(pre_activation >= 0)-1)
 
             activations_prev = activations
-
 
         # Keeping track of the example id is important to name the new auxiliary variables
         self.eg_id += 1
