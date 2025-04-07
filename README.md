@@ -1,4 +1,7 @@
-# Training Binarized Neural Networks using MIP and CP
+# Credit
+This is a clone of the original source at: https://bitbucket.org/RToroIcarte/bnn/src/master/
+
+The original repository description is as follows:
 
 Binarized Neural Networks (BNNs) are an important class of neural network characterized by weights and activations restricted to the set {-1,+1}. BNNs provide simple compact descriptions and as such have a wide range of applications in low-power devices. This project investigates a model-based approach to training BNNs using constraint programming (CP), mixed-integer programming (MIP), and CP/MIP hybrids. We formulate the training problem as finding a set of weights that correctly classify the training set instances while optimizing objective functions that have been proposed in the literature as proxies for generalizability. Our experimental results on the MNIST digit recognition dataset suggest that---when training data is limited---the BNNs found by our hybrid approach generalize better than those obtained from gradient descent. A detailed description of all our models and main results can be found in the following paper ([link](http://www.cs.toronto.edu/~rntoro/docs/cp19_bnns.pdf)):
 
@@ -9,9 +12,14 @@ Binarized Neural Networks (BNNs) are an important class of neural network charac
         year      = {2019}
     }
 
-This code is meant to be a clean and usable version of our approach. If you find any bugs or have questions about it, please let us know. We'll be happy to help you!
+# Ternary Neural Network 
+This repository contains code extending the original authors' work on BNNs to TNNs. Here we study the performance of three model-based training approaches for deep Ternary Neural Networks (TNNs), namely constraint programming (CP), mixed-integer programming (MIP), and a CP/MIP hybrid, as an extension of an early paper on training deep Binary Neural Networks (BNNs) (Toro Icarte et. al., 2019). This research paper showed that with limited data, the three model-based approaches can train BNNs to generalize a lot better than the baseline method, which uses gradient descent.  The paper also showed how CP is effective at finding feasible solutions for training BNNs, while MIP focuses on optimizing BNNs towards generalized solutions. The prior work also found that adding more hidden layers did not improve generalization for the deep learning models as typically expected. 
+
+Inspired by the source code, the team’s objective is to compare the performance of each of these methods on TNNs to the earlier paper’s results on BNNs and compare the generalization of these approaches to gradient descent training-based approaches. To match the output layer of our TNN, which returns an activation over three classes, we transformed the SST5 dataset, which has five classes: strongly positive, positive, strongly negative, negative, and neutral, and trained it on our TNN.
+
 
 ## Installation instructions
+Installation instructions are the same as the original authors' comments as below:
 
 You can clone this repository by running:
 
@@ -44,6 +52,3 @@ For reference only, we included the following three scripts that would allow you
   - './scripts/show.sh': reads the log files from the experiments that have been run and prints a summary table with the main statistics
 
 However, running all those experiments sequentially would take around 1,200 days (but only 2 hours if you run them in parallel using 14,400 cores :thinking:). To test that the code is properly working, we included three lightweight versions of the previous scripts: './scripts/test_gd.sh', './scripts/test_mb.sh', and './scripts/test_show.sh'. They run experiments with up to 3 examples per class using a 5 minutes time limit. The 'test_gd.sh' takes around 7.5 hours and 'test_mb.sh' takes around 6.0 hours. Then, you can run 'test_show.sh' to observe a summary of the test performance obtained by each approach. For instance, ha_m (the HA model using the max-margin objective) should reach test performances between 20% and 30% (or timeout) whereas gd_t should reach test performances between 5% and 13%.
-
-## Credit
-This is a clone of the original source at: https://bitbucket.org/RToroIcarte/bnn/src/master/
