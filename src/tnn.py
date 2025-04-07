@@ -67,8 +67,9 @@ class TernaryNeuralNetwork:
             self.patterns.append(x)
 
         # Computing performance
+        threshold = 2
         score = tf.multiply(self.labels, x)
-        score = tf.reduce_sum(score, 1) >= n_outputs
+        score = tf.reduce_sum(score, 1) >= n_outputs - threshold
         self.performance = tf.reduce_mean(tf.cast(score, tf.float32)) # Should return a scalar!
 
         # initialize variables
