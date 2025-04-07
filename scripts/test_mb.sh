@@ -1,10 +1,12 @@
 # PARAMS
-MODELS="mip cp hw ha"
-OBJECTIVES="min-w max-m"
+# MODELS="mip cp hw ha"
+# OBJECTIVES="min-w max-m"
+MODELS="cp"
+OBJECTIVES="min-w"
 HLS=`seq 0 2`
 EXS=`seq 1 3`
 INS=`seq 0 0`
-TO=5
+TO=10
 # Running the experiments
 cd ../src
 for model in $MODELS; do
